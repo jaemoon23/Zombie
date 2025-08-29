@@ -33,8 +33,8 @@ public class Gun : MonoBehaviour
         }
     }
 
+    public Uimanager uimanager;
     public GunData gunData;
-
     public ParticleSystem muzzleEffect; // 총구 화염 이펙트
     public ParticleSystem shellEffect;  // 탄피 배출 이펙트
 
@@ -64,7 +64,7 @@ public class Gun : MonoBehaviour
 
         lastFireTime = 0f;
         CurrentState = State.Ready;
-
+        uimanager.SetAmmoText(magAmmo, ammoRemain);
 
     }
 
@@ -156,7 +156,7 @@ public class Gun : MonoBehaviour
         StartCoroutine(CoShotEffect(hitPosition));
 
         --magAmmo;
-        Debug.Log($"지금 탄창 {magAmmo}");
+        uimanager.SetAmmoText(magAmmo, ammoRemain);
         if (magAmmo == 0)
         {
             CurrentState = State.Empty; // 총알이 다 떨어졌다면 상태를 Empty로 변경
@@ -166,7 +166,8 @@ public class Gun : MonoBehaviour
     // 탄창 교체
     public bool Reload()
     {
-        if (ammoRemain <= 0 || magAmmo >= gunData.magCapacity)
+        // 현재 상태가 재장전 중이거나, 남은 총알이 없거나, 탄창이 이미 가득 찼다면 재장전 불가
+        if (CurrentState == State.Reloading || ammoRemain == 0 || magAmmo == gunData.magCapacity)
         {
             return false;
         }
@@ -178,15 +179,31 @@ public class Gun : MonoBehaviour
     private IEnumerator CoReloading()
     {
         CurrentState = State.Reloading;
+        audioSource.PlayOneShot(gunData.reloadClip);
 
         yield return new WaitForSeconds(gunData.reloadTime);
 
-        magAmmo = gunData.magCapacity;
-        ammoRemain -= magAmmo;
+        //magAmmo = gunData.magCapacity;
+        //ammoRemain -= magAmmo;
+
+        magAmmo += ammoRemain;
+        if (magAmmo >= gunData.magCapacity) 
+        {
+            magAmmo = gunData.magCapacity;
+            ammoRemain -= magAmmo;
+        }
+        else
+        {
+            ammoRemain = 0; 
+        }
+       
+
         CurrentState = State.Ready;
-        Debug.Log($"재장전 후 탄창: {magAmmo}");
-        Debug.Log($"내가 가진 총알: {ammoRemain}");
+    }
 
-
+    public void AddAmmo(int amount)
+    {
+        ammoRemain = Mathf.Min(ammoRemain + amount, gunData.startAmmoRemain);
+        uimanager.SetAmmoText(magAmmo, ammoRemain);
     }
 }

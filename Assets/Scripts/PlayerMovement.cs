@@ -12,8 +12,6 @@ public class PlayerMovement : MonoBehaviour
     private PlayerInput input;
     private Animator animator;
 
-
-
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
